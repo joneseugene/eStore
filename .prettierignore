@@ -1,0 +1,9 @@
+.next
+node_modules
+public/sw.js
+package-lock.json
+src/types/database.ts
+supabase/.temp
+CLAUDE.md
+AGENTS.md
+supabase/config.toml

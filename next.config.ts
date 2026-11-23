@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
+import { withSerwist } from "@serwist/turbopack";
+
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+];
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
@@ -12,6 +18,21 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async headers() {
+    return [
+      { source: "/(.*)", headers: securityHeaders },
+      {
+        // Always revalidate the service worker so updates roll out promptly.
+        source: "/serwist/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+        ],
+      },
+    ];
+  },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);
