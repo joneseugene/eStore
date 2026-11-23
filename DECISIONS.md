@@ -50,3 +50,33 @@ supabase/
   seed.sql
 tests/e2e/             Playwright
 ```
+
+## Phase 1 — Database (2026-11-23)
+
+**D-014 CLI targets `--remote` explicitly.** In Supabase CLI v3, `db push`, `gen types` and `test db` default to the local database, so the npm scripts pass `--remote`.
+
+**D-015 Helpers in a `private` schema.** RLS helper functions, document counters and processed idempotency keys live in `private`, which the Data API does not expose. Helpers are `SECURITY DEFINER STABLE` with an empty `search_path`.
+
+**D-016 Access model.** A membership (user, unit, role) grants access to the unit's ltree subtree. Users also see the *ancestors* of their units (names only, so an incoming dispatch can show "MBSSE National Store"), never siblings. Policies use `unit_id in (select private.accessible_unit_ids())`, so the set is computed once per query rather than once per row.
+
+**D-017 Composite tenant foreign keys.** Child tables reference `(id, organization_id)` on their parents, so a row can never point at another tenant's data, even through a bug in a SECURITY DEFINER function.
+
+**D-018 Column-level grants guard workflow columns.** Clients may create and edit *draft* documents directly under RLS. Status, document numbers, approval, posting and receiving fields, receipt lots and `organization_id` (on update) are not granted, so only stock functions can change them. `anon` has no table access. Default privileges are revoked for future tables, so each migration must grant explicitly.
+
+**D-019 Receipt quantities.** `quantity_damaged` is a subset of `quantity_received` (what physically arrived). Good stock = received − damaged. To be confirmed in Phase 4.
+
+**D-020 Idempotency.** Client idempotency keys are recorded once per *operation* in `private.processed_requests` (one operation can write many ledger rows). Ledger rows also carry the key for tracing.
+
+**D-021 Ledger protection.** Besides having no client write grants, `stock_movements` has triggers rejecting UPDATE, DELETE and TRUNCATE for everyone, including the table owner. `audit_log` rejects UPDATE and DELETE.
+
+**D-022 Not audited row by row.** `metric_values` (bulk census imports would flood the log) and `stock_movements` (already an immutable ledger). Everything else important is audited, including `profiles`, so platform-admin grants are traceable.
+
+**D-023 Unit officers may manage end points.** Besides org admins, a `unit_officer` may insert and update end-point units, and write metric values, under their own unit. This supports DEO school imports (§8).
+
+**D-024 Audit log visibility.** Only org admins (and platform admins) can read the audit log. Open question: should viewers (auditors) also see it?
+
+**D-025 Client-chosen ids for drafts.** Clients may set `id` when inserting draft documents and lines, so a document created offline can be referenced by its lines before it syncs (Phase 6).
+
+**D-026 `npm run db:test` uses psql.** `supabase test db` needs Docker even for remote targets. `scripts/db-test.mjs` runs each `supabase/tests/*.sql` file through psql via the eu-west-1 session pooler (the direct host is IPv6-only), using the database password from `SUPABASE_DB` in `.env.local`. Each file rolls back.
+
+**D-027 Advisor clean-up.** Line-table write policies are split into insert/update/delete so SELECT has a single policy. `EXECUTE` on Supabase's built-in `public.rls_auto_enable()` event-trigger function is revoked from anon and authenticated; it was not callable anyway, but the advisor flagged it.

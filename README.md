@@ -34,10 +34,10 @@ npx supabase link --project-ref <project-ref>
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript |
 | `npm run format` | Prettier (with Tailwind class sorting) |
 | `npm test` | Vitest unit tests |
-| `npm run test:e2e` | Playwright (builds and serves on port 3100) |
-| `npm run db:push` | Apply `supabase/migrations` to the linked project |
+| `npm run test:e2e` | Playwright (builds and serves on port 4317) |
+| `npm run db:push:dry` / `npm run db:push` | Preview / apply `supabase/migrations` on the hosted project |
 | `npm run db:types` | Regenerate `src/types/database.ts` from the linked project |
-| `npm run db:test` | pgTAP tests in `supabase/tests` against the linked project |
+| `npm run db:test` | pgTAP tests in `supabase/tests` via psql (needs `SUPABASE_DB` = database password in `.env.local`; tests roll back) |
 
 `db:push` changes the hosted database. Review migrations before running it.
 

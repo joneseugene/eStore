@@ -12,9 +12,10 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "db:types": "supabase gen types typescript --linked --schema public > src/types/database.ts",
-    "db:push": "supabase db push",
-    "db:test": "supabase test db --linked"
+    "db:types": "supabase gen types --lang=typescript --schema public --remote > src/types/database.ts",
+    "db:push": "supabase db push --remote",
+    "db:test": "node scripts/db-test.mjs",
+    "db:push:dry": "supabase db push --remote --dry-run"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.8",
