@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3100;
+// Uncommon port: reuseExistingServer must never attach to another local app.
+const PORT = 4317;
 
 export default defineConfig({
   testDir: "tests/e2e",
