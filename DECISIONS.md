@@ -80,3 +80,21 @@ tests/e2e/             Playwright
 **D-026 `npm run db:test` uses psql.** `supabase test db` needs Docker even for remote targets. `scripts/db-test.mjs` runs each `supabase/tests/*.sql` file through psql via the eu-west-1 session pooler (the direct host is IPv6-only), using the database password from `SUPABASE_DB` in `.env.local`. Each file rolls back.
 
 **D-027 Advisor clean-up.** Line-table write policies are split into insert/update/delete so SELECT has a single policy. `EXECUTE` on Supabase's built-in `public.rls_auto_enable()` event-trigger function is revoked from anon and authenticated; it was not callable anyway, but the advisor flagged it.
+
+## Phase 1b — Configurable roles and permissions (2026-11-23)
+
+Requested change: roles and permissions must be configurable rather than a fixed enum. Supersedes D-016 (role part), D-023 and D-024.
+
+**D-028 Permission-based access.** Code and RLS check *permissions* (a fixed catalogue of 27 keys in `public.permissions`, changed only by migrations), never role names. Roles are per-organization data (`roles`, `role_permissions`) that holders of `roles.manage` can edit; custom roles can be created. A membership is (user, unit, role) and applies to the unit's subtree.
+
+**D-029 Per-user overrides with deny-wins.** `user_permission_overrides` grants or denies one permission to one user at a unit (applies to its subtree). Effective permission = (any role or grant at the unit or an ancestor) AND NOT (any deny at the unit or an ancestor).
+
+**D-030 Organization-scoped permissions count only at a root unit.** `org.settings.manage`, `structure.manage`, `catalogue.manage`, `roles.manage` and `audit.view` apply only when held at a top-level unit. An Org Admin role assigned at a district therefore cannot edit org-wide configuration. (Answers Phase 1 open question 3.)
+
+**D-031 Escalation guards.** You can assign a role only if you hold every permission in it at that unit, grant or deny only permissions you hold, add a permission to a role only if you hold it org-wide, and never change your own memberships or overrides. Starter (`is_system`) roles can be edited but not deleted. Platform admins bypass these checks to bootstrap a new organization.
+
+**D-032 Starter roles.** Every new organization automatically gets Org Admin (all permissions), Approver, Store Manager, Unit Officer and Viewer. Audit-log access is now the `audit.view` permission (Org Admin only by default), so any role can be given it. (Answers Phase 1 open question 1.) `end_point_user` is not created; v1 has no end-point logins.
+
+**D-033 `public.my_permissions(unit_id)`.** Returns the caller's effective permission keys at a unit, so the UI can show or hide actions. The server still enforces everything through RLS and functions.
+
+**Known gap:** nothing stops an organization removing its last `roles.manage` / `users.manage` holder. A platform admin can recover. A guard can be added in Phase 2 if wanted.

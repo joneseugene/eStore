@@ -594,7 +594,7 @@ export type Database = {
           created_at: string
           id: string
           organization_id: string
-          role: Database["public"]["Enums"]["app_role"]
+          role_id: string
           unit_id: string
           updated_at: string
           user_id: string
@@ -603,7 +603,7 @@ export type Database = {
           created_at?: string
           id?: string
           organization_id: string
-          role: Database["public"]["Enums"]["app_role"]
+          role_id: string
           unit_id: string
           updated_at?: string
           user_id: string
@@ -612,7 +612,7 @@ export type Database = {
           created_at?: string
           id?: string
           organization_id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role_id?: string
           unit_id?: string
           updated_at?: string
           user_id?: string
@@ -624,6 +624,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_role_fkey"
+            columns: ["role_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id", "organization_id"]
           },
           {
             foreignKeyName: "memberships_unit_id_organization_id_fkey"
@@ -821,6 +828,33 @@ export type Database = {
           },
         ]
       }
+      permissions: {
+        Row: {
+          category: string
+          description: string
+          key: string
+          label: string
+          scope: Database["public"]["Enums"]["permission_scope"]
+          sort_order: number
+        }
+        Insert: {
+          category: string
+          description: string
+          key: string
+          label: string
+          scope: Database["public"]["Enums"]["permission_scope"]
+          sort_order: number
+        }
+        Update: {
+          category?: string
+          description?: string
+          key?: string
+          label?: string
+          scope?: Database["public"]["Enums"]["permission_scope"]
+          sort_order?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1017,6 +1051,83 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string
+          organization_id: string
+          permission_key: string
+          role_id: string
+        }
+        Insert: {
+          created_at?: string
+          organization_id: string
+          permission_key: string
+          role_id: string
+        }
+        Update: {
+          created_at?: string
+          organization_id?: string
+          permission_key?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "role_permissions_role_id_organization_id_fkey"
+            columns: ["role_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          is_system: boolean
+          key: string | null
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_system?: boolean
+          key?: string | null
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_system?: boolean
+          key?: string | null
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1265,6 +1376,74 @@ export type Database = {
           },
         ]
       }
+      user_permission_overrides: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          effect: Database["public"]["Enums"]["permission_effect"]
+          id: string
+          organization_id: string
+          permission_key: string
+          reason: string | null
+          unit_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          effect: Database["public"]["Enums"]["permission_effect"]
+          id?: string
+          organization_id: string
+          permission_key: string
+          reason?: string | null
+          unit_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          effect?: Database["public"]["Enums"]["permission_effect"]
+          id?: string
+          organization_id?: string
+          permission_key?: string
+          reason?: string | null
+          unit_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permission_overrides_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_unit_id_organization_id_fkey"
+            columns: ["unit_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       stock_balances: {
@@ -1302,18 +1481,11 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      my_permissions: { Args: { p_unit: string }; Returns: string[] }
     }
     Enums: {
       allocation_basis: "metric" | "end_point_count" | "manual"
       allocation_status: "draft" | "approved" | "executed" | "cancelled"
-      app_role:
-        | "org_admin"
-        | "approver"
-        | "store_manager"
-        | "unit_officer"
-        | "end_point_user"
-        | "viewer"
       attribute_type: "text" | "number" | "boolean" | "select" | "multi_select"
       dispatch_status:
         | "draft"
@@ -1331,6 +1503,8 @@ export type Database = {
         | "adjustment"
         | "loss_damage"
         | "return"
+      permission_effect: "grant" | "deny"
+      permission_scope: "organization" | "unit"
       receipt_status: "draft" | "posted"
     }
     CompositeTypes: {
@@ -1461,14 +1635,6 @@ export const Constants = {
     Enums: {
       allocation_basis: ["metric", "end_point_count", "manual"],
       allocation_status: ["draft", "approved", "executed", "cancelled"],
-      app_role: [
-        "org_admin",
-        "approver",
-        "store_manager",
-        "unit_officer",
-        "end_point_user",
-        "viewer",
-      ],
       attribute_type: ["text", "number", "boolean", "select", "multi_select"],
       dispatch_status: [
         "draft",
@@ -1488,6 +1654,8 @@ export const Constants = {
         "loss_damage",
         "return",
       ],
+      permission_effect: ["grant", "deny"],
+      permission_scope: ["organization", "unit"],
       receipt_status: ["draft", "posted"],
     },
   },
